@@ -13,13 +13,13 @@ go run main.go
 Build Standar
 
 ```bash
-go build -o kasir-api
+go build -o kasir-api.exe
 ```
 
 Build Production (Lebih Kecil)
 
 ```bash
-go build -ldflags="-s -w" -o kasir-api
+go build -ldflags="-s -w" -o kasir-api.exe
 ```
 
 - `-s`: Strip symbol table
