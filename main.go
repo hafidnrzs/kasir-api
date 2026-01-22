@@ -21,6 +21,31 @@ var produk = []Produk{
 	{ID: 3, Nama: "Kecap", Harga: 12000, Stok: 20},
 }
 
+// GET localhost:8080/api/produk
+func getAllProduk(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(produk)
+}
+
+// POST localhost:8080/api/produk
+func createProduk(w http.ResponseWriter, r *http.Request) {
+	// baca data dari request
+	var produkBaru Produk
+	err := json.NewDecoder(r.Body).Decode(&produkBaru)
+	if err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// masukkan data ke dalam variable produk
+	produkBaru.ID = len(produk) + 1
+	produk = append(produk, produkBaru)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201
+	json.NewEncoder(w).Encode(produkBaru)
+}
+
 // GET localhost:8080/api/produk/{id}
 func getProdukByID(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/produk/")
@@ -106,41 +131,29 @@ func deleteProduk(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// GET localhost:8080/api/produk/{id}
-	// PUT localhost:8080/api/produk/{id}
-	// DELETE localhost:8080/api/produk/{id}
+	// GET, PUT, DELETE localhost:8080/api/produk/{id}
 	http.HandleFunc("/api/produk/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
+		switch r.Method {
+		case http.MethodGet:
 			getProdukByID(w, r)
-		} else if r.Method == "PUT" {
+		case http.MethodPut:
 			updateProdukByID(w, r)
-		} else if r.Method == "DELETE" {
+		case http.MethodDelete:
 			deleteProduk(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
-	// GET localhost:8080/api/produk
-	// POST localhost:8080/api/produk
+	// GET, POST localhost:8080/api/produk
 	http.HandleFunc("/api/produk", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(produk)
-		} else if r.Method == "POST" {
-			// baca dari request
-			var produkBaru Produk
-			err := json.NewDecoder(r.Body).Decode(&produkBaru)
-			if err != nil {
-				http.Error(w, "invalid request", http.StatusBadRequest)
-				return
-			}
-
-			// masukkan data ke dalam variable produk
-			produkBaru.ID = len(produk) + 1
-			produk = append(produk, produkBaru)
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated) // 201
-			json.NewEncoder(w).Encode(produkBaru)
+		switch r.Method {
+		case http.MethodGet:
+			getAllProduk(w, r)
+		case http.MethodPost:
+			createProduk(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
