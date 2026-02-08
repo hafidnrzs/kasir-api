@@ -14,9 +14,18 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (repo *ProductRepository) GetAll() ([]models.Product, error) {
-	query := "SELECT p.id, p.name, p.price, p.stock, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.id"
-	rows, err := repo.db.Query(query)
+func (repo *ProductRepository) GetAll(name string) ([]models.Product, error) {
+	query := "SELECT p.id, p.name, p.price, p.stock, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id"
+
+	var args []interface{}
+	if name != "" {
+		query += " WHERE p.name ILIKE $1"
+		args = append(args, "%"+name+"%")
+	}
+
+	query += " ORDER BY p.id"
+
+	rows, err := repo.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -30,17 +39,20 @@ func (repo *ProductRepository) GetAll() ([]models.Product, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		products = append(products, p)
 	}
 
 	return products, nil
 }
 
-func (repo *ProductRepository) Create(product *models.Product) error {
+func (repo *ProductRepository) Create(input *models.ProductInput) (*models.Product, error) {
+	var id int
 	query := "INSERT INTO products (name, price, stock, category_id) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := repo.db.QueryRow(query, product.Name, product.Price, product.Stock, product.CategoryID).Scan(&product.ID)
-	return err
+	err := repo.db.QueryRow(query, input.Name, input.Price, input.Stock, input.CategoryID).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return repo.GetByID(id)
 }
 
 func (repo *ProductRepository) GetByID(id int) (*models.Product, error) {
@@ -58,23 +70,23 @@ func (repo *ProductRepository) GetByID(id int) (*models.Product, error) {
 	return &p, nil
 }
 
-func (repo *ProductRepository) Update(product *models.Product) error {
+func (repo *ProductRepository) Update(id int, input *models.ProductInput) (*models.Product, error) {
 	query := "UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4 WHERE id = $5"
-	result, err := repo.db.Exec(query, product.Name, product.Price, product.Stock, product.CategoryID, product.ID)
+	result, err := repo.db.Exec(query, input.Name, input.Price, input.Stock, input.CategoryID, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if rows == 0 {
-		return errors.New("product not found")
+		return nil, errors.New("product not found")
 	}
 
-	return nil
+	return repo.GetByID(id)
 }
 
 func (repo *ProductRepository) Delete(id int) error {
