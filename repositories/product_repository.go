@@ -39,7 +39,6 @@ func (repo *ProductRepository) GetAll(name string) ([]models.Product, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		products = append(products, p)
 	}
 
