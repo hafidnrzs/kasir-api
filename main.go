@@ -63,17 +63,17 @@ func main() {
 	reportHandler := handlers.NewReportHandler(reportService)
 
 	// Setup routes
-	http.HandleFunc("/api/product", productHandler.HandleProducts)
+	http.HandleFunc("/api/product", middlewares.CORS(middlewares.Logger(productHandler.HandleProducts)))
 
 	// bungkus protected route dengan middleware
-	http.HandleFunc("/api/product/", apiKeyMiddleware(productHandler.HandleProductByID))
-	http.HandleFunc("/api/categories", categoryHandler.HandleCategories)
-	http.HandleFunc("/api/categories/", categoryHandler.HandleCategoryByID)
+	http.HandleFunc("/api/product/", middlewares.CORS(middlewares.Logger(apiKeyMiddleware(productHandler.HandleProductByID))))
+	http.HandleFunc("/api/categories", middlewares.CORS(middlewares.Logger(categoryHandler.HandleCategories)))
+	http.HandleFunc("/api/categories/", middlewares.CORS(middlewares.Logger(categoryHandler.HandleCategoryByID)))
 
-	http.HandleFunc("/api/checkout", apiKeyMiddleware(transactionHandler.HandleCheckout))
+	http.HandleFunc("/api/checkout", middlewares.CORS(middlewares.Logger(apiKeyMiddleware(transactionHandler.HandleCheckout))))
 
-	http.HandleFunc("/api/report/hari-ini", reportHandler.HandleReportToday)
-	http.HandleFunc("/api/report", reportHandler.HandleReport)
+	http.HandleFunc("/api/report/hari-ini", middlewares.CORS(middlewares.Logger(reportHandler.HandleReportToday)))
+	http.HandleFunc("/api/report", middlewares.CORS(middlewares.Logger(reportHandler.HandleReport)))
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
